@@ -37,7 +37,7 @@ This project strictly follows **Hexagonal Architecture** principles combined wit
 │   │         ▼                                      │   │
 │   │   ┌────────────────────────────────────────┐   │   │
 │   │   │ domain (Core / DDD Aggregate)          │   │   │
-│   │   │    └── model/ PaymentTransaction ☀️     │   │   │
+│   │   │    └── model/ PaymentTransaction ☀️    │   │   │
 │   │   └────────────────────────────────────────┘   │   │
 │   │         │                                      │   │
 │   │         ▼                                      │   │
