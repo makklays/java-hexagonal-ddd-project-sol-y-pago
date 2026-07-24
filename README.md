@@ -4,8 +4,10 @@ A production-ready FinTech Payment Gateway microservice built with **Java 21**, 
 
 The project name **"Sol y Pago"** translates from Spanish as *"Sun and Payment"*, reflecting a modern Spanish FinTech startup ecosystem.
 
-<img src="doc/images/hexagonal_architecture1.png" width="400" alt="Hexagonal Architecture Diagram" />
-<img src="doc/images/hexagonal_architecture2.png" width="400" alt="Hexagonal Architecture Diagram 2" />
+<p align="left">
+  <img src="doc/images/hexagonal_architecture1.png" width="400" alt="Sol y Pago 1" />
+  <img src="doc/images/hexagonal_architecture2.png" width="400" alt="Sol y Pago 2" />
+</p>
 
 ---
 
