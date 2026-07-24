@@ -6,7 +6,7 @@ The project name **"Sol y Pago"** translates from Spanish as *"Sun and Payment"*
 
 <p align="left">
   <img src="doc/images/hexagonal_architecture1.png" width="400" alt="Sol y Pago 1" />
-  <img src="doc/images/hexagonal_architecture2.png" width="400" alt="Sol y Pago 2" />
+  <img src="doc/images/hexagonal_architecture3.png" width="400" alt="Sol y Pago 2" />
 </p>
 
 ---
