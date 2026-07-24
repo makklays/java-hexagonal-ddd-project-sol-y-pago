@@ -38,4 +38,21 @@ docker run --name sol-y-pago-postgres \
 
 //---------------------------------------------------------------------
 
+Чтобы проверить умный роутинг в Испании, отправьте HTTP POST запрос через Postman, cURL или IntelliJ HTTP Client
+на адрес http://localhost:8081/api/v1/payments:
+
+curl -X POST http://localhost:8081/api/v1/payments \
+  -H "Content-Type: application/json" \
+  -H "X-Merchant-Id: 00000000-0000-0000-0000-000000000000" \
+  -H "X-Merchant-Key: dummy_key" \
+  -d '{
+    "amount": 25.50,
+    "currency": "EUR",
+    "countryCode": "ES",
+    "customerEmail": "alex@test.com",
+    "customerPhone": "+34611223344",
+    "paymentMethod": "CARD"
+  }'
+
+//---------------------------------------------------------------------
 
