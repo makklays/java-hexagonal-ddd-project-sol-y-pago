@@ -1,0 +1,35 @@
+
+spring:
+  application:
+    name: sol-y-pago-gateway
+
+  # Настройки подключения к базе данных PostgreSQL
+  datasource:
+    generate-unique-name: false
+    url: jdbc:postgresql://localhost:5432/sol_y_pago_db
+    username: admin
+    password: admin # Укажите ваш пароль от PostgreSQL
+    driver-class-name: org.postgresql.Driver
+
+  # Настройки Hibernate/JPA
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: true # Будет выводить все SQL-запросы в консоль для дебага
+    generate-ddl: false
+    properties:
+      connection:
+        charSet: utf-8
+      hibernate:
+        ddl-auto: none # Автоматически создаст таблицы на основе @Entity (для демо это удобно)
+        show_sql: true
+        format_sql: true
+
+  # Настройки Flyway для управления миграциями базы данных
+  flyway:
+    enabled: true
+    baseline-on-migrate: true # Поможет, если база данных была не пустой
+
+# Настройки встроенного сервера Tomcat
+server:
+  port: 8081
+
