@@ -1,6 +1,6 @@
 # Project Sol y Pago ☀️💶💸 - Java 
 
-A production-ready FinTech Payment Gateway microservice built with **Java 21**, **Spring Boot 3**, **Domain-Driven Design (DDD)**, and **Hexagonal Architecture (Ports & Adapters)**.
+A production-ready FinTech Payment Gateway microservice built with **Java 17**, **Spring Boot 3**, **Domain-Driven Design (DDD)**, and **Hexagonal Architecture (Ports & Adapters)**.
 
 The project name **"Sol y Pago"** translates from Spanish as *"Sun and Payment"*, reflecting a modern Spanish FinTech startup ecosystem.
 
@@ -15,7 +15,7 @@ The project name **"Sol y Pago"** translates from Spanish as *"Sun and Payment"*
 
 This project strictly follows **Hexagonal Architecture** principles combined with **DDD patterns**. The source code is decoupled into three isolated Maven modules to enforce architectural boundaries at the compilation level:
 
-1. **`domain` (The Core)**: 100% pure Java 21 code. Contains Aggregate Roots, Entities, Value Objects, and core business rules. Zero dependencies on Spring, Hibernate, or any external framework.
+1. **`domain` (The Core)**: 100% pure Java 17 code. Contains Aggregate Roots, Entities, Value Objects, and core business rules. Zero dependencies on Spring, Hibernate, or any external framework.
 2. **`application` (Use Cases / Ports)**: Orchestrates business workflows. Defines **Inbound Ports** (Use Cases API) and **Outbound Ports** (SPI for DB and Gateways). Depends only on the `domain` module.
 3. **`infrastructure` (Adapters)**: Technology-specific layer. Contains **Inbound Adapters** (Spring REST Controllers) and **Outbound Adapters** (Spring Data JPA, PostgreSQL, Stripe/Bizum HTTP Clients).
 
@@ -68,7 +68,7 @@ The system acts as an intelligent smart-routing gateway for European e-commerce 
 
 ## 🛠️ Tech Stack & Prerequisites
 
-* **Backend**: Java 21 (Utilizing Record types and Pattern Matching)
+* **Backend**: Java 17 (Utilizing Record types and Pattern Matching)
 * **Framework**: Spring Boot 3.3+ (Spring Web, Spring Data JPA)
 * **Database**: PostgreSQL 16+
 * **Build System**: Apache Maven 3.9+
