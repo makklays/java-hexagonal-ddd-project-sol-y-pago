@@ -37,11 +37,13 @@ public class PaymentRestController {
     public ResponseEntity<PaymentResponseDto> processPayment(
             @RequestHeader("X-Merchant-Id") UUID merchantId,
             @RequestHeader("X-Merchant-Key") String apiKey,
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey, // Перехватываем заголовок
             @RequestBody PaymentRequestDto request) {
 
         // 1. Создаем иммутабельную бизнес-команду из HTTP-данных
         ProcessPaymentCommand command = new ProcessPaymentCommand(
                 merchantId,
+                idempotencyKey,
                 apiKey,
                 request.amount(),
                 request.currency(),

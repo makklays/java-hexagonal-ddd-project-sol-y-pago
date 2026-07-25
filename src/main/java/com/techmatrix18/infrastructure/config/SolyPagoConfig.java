@@ -6,6 +6,8 @@ import com.techmatrix18.application.port.in.merchant.VerifyMerchantUseCase;
 import com.techmatrix18.application.port.in.payment.ProcessPaymentUseCase;
 import com.techmatrix18.application.port.out.customer.CustomerRepositoryPort;
 import com.techmatrix18.application.port.out.merchant.MerchantRepositoryPort;
+import com.techmatrix18.application.port.out.payment.IdempotencyRepositoryPort;
+import com.techmatrix18.application.port.out.payment.OutboxEventPort;
 import com.techmatrix18.application.port.out.payment.PaymentGatewayPort;
 import com.techmatrix18.application.port.out.payment.PaymentRepositoryPort;
 import com.techmatrix18.application.service.customer.FindOrCreateCustomerService;
@@ -53,12 +55,16 @@ public class SolyPagoConfig {
             VerifyMerchantUseCase verifyMerchantUseCase,
             FindOrCreateCustomerUseCase findOrCreateCustomerUseCase,
             PaymentRepositoryPort paymentRepositoryPort,
+            IdempotencyRepositoryPort idempotencyRepositoryPort, // Добавили новый порт сюда
+            OutboxEventPort outboxEventPort,
             List<PaymentGatewayPort> gatewayPorts) {
 
         return new ProcessPaymentService(
                 verifyMerchantUseCase,
                 findOrCreateCustomerUseCase,
                 paymentRepositoryPort,
+                idempotencyRepositoryPort, // Передали в конструктор сервиса
+                outboxEventPort,
                 gatewayPorts
         );
     }

@@ -13,6 +13,7 @@ import java.util.UUID;
  */
 public record ProcessPaymentCommand(
     UUID merchantId,
+    String idempotencyKey,
     String apiKey,
     BigDecimal amount,
     String currency,
@@ -23,6 +24,12 @@ public record ProcessPaymentCommand(
 ) {
     public ProcessPaymentCommand {
         if (merchantId == null) throw new IllegalArgumentException("Merchant ID is required");
+
+        // Валидация ключа идемпотентности: он не должен быть пустым
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            throw new IllegalArgumentException("Idempotency key is required for secure financial transactions");
+        }
+
         if (apiKey == null || apiKey.isBlank()) throw new IllegalArgumentException("API key is required");
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) throw new IllegalArgumentException("Amount must be greater than zero");
         if (currency == null || currency.length() != 3) throw new IllegalArgumentException("Currency must be a 3-letter ISO code");

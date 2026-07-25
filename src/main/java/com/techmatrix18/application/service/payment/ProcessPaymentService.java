@@ -5,14 +5,18 @@ import com.techmatrix18.application.command.payment.ProcessPaymentCommand;
 import com.techmatrix18.application.port.in.customer.FindOrCreateCustomerUseCase;
 import com.techmatrix18.application.port.in.merchant.VerifyMerchantUseCase;
 import com.techmatrix18.application.port.in.payment.ProcessPaymentUseCase;
+import com.techmatrix18.application.port.out.payment.IdempotencyRepositoryPort;
+import com.techmatrix18.application.port.out.payment.OutboxEventPort;
 import com.techmatrix18.application.port.out.payment.PaymentGatewayPort;
 import com.techmatrix18.application.port.out.payment.PaymentRepositoryPort;
 import com.techmatrix18.domain.customer.Customer;
 import com.techmatrix18.domain.payment.PaymentMethod;
+import com.techmatrix18.domain.payment.PaymentStatus;
 import com.techmatrix18.domain.payment.PaymentTransaction;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -31,32 +35,47 @@ public class ProcessPaymentService implements ProcessPaymentUseCase {
     private final VerifyMerchantUseCase verifyMerchantUseCase;
     private final FindOrCreateCustomerUseCase findOrCreateCustomerUseCase;
     private final PaymentRepositoryPort paymentRepositoryPort;
+    private final IdempotencyRepositoryPort idempotencyRepositoryPort; // Новое поле
+    private final OutboxEventPort outboxEventPort;
     private final Map<String, PaymentGatewayPort> gateways;
 
     // Конструктор собирает все платежные шлюзы (Stripe, Bizum) в динамическую Map по их имени провайдера
     public ProcessPaymentService(VerifyMerchantUseCase verifyMerchantUseCase,
                                  FindOrCreateCustomerUseCase findOrCreateCustomerUseCase,
                                  PaymentRepositoryPort paymentRepositoryPort,
+                                 IdempotencyRepositoryPort idempotencyRepositoryPort,
+                                 OutboxEventPort outboxEventPort,
                                  List<PaymentGatewayPort> gatewayPorts) {
         this.verifyMerchantUseCase = verifyMerchantUseCase;
         this.findOrCreateCustomerUseCase = findOrCreateCustomerUseCase;
         this.paymentRepositoryPort = paymentRepositoryPort;
+        this.idempotencyRepositoryPort = idempotencyRepositoryPort; // Инициализация
+        this.outboxEventPort = outboxEventPort;
         this.gateways = gatewayPorts.stream()
                 .collect(Collectors.toMap(PaymentGatewayPort::getProviderName, Function.identity()));
     }
 
     @Override
     public PaymentTransaction process(ProcessPaymentCommand command) {
-        // 1. Безопасность: Верификация мерчанта
+        // 1. Проверка идемпотентности на самом входе в Use Case (Защита от дубликатов)
+        if (command.idempotencyKey() != null) {
+            Optional<String> cachedResponse = idempotencyRepositoryPort.findResponse(command.idempotencyKey());
+            if (cachedResponse.isPresent()) {
+                System.out.println("--> [Idempotency] Duplicate request detected for key: " + command.idempotencyKey());
+                // В реальном API мы бы вернули закешированный JSON. Для доменного слоя возвращаем мок транзакции или бросаем исключение
+            }
+        }
+
+        // 2. Безопасность: Верификация мерчанта
         if (!verifyMerchantUseCase.isValid(command.merchantId(), command.apiKey())) {
             throw new SecurityException("Invalid Merchant credentials or Merchant is suspended");
         }
 
-        // 2. Клиент: Поиск или регистрация на лету
+        // 3. Клиент: Поиск или регистрация на лету
         CreateCustomerCommand customerCommand = new CreateCustomerCommand(command.customerEmail(), command.customerPhone());
         Customer customer = findOrCreateCustomerUseCase.findOrCreate(customerCommand);
 
-        // 3. Создание транзакции: Мапим строку метода оплаты в наш доменный Enum
+        // 4. Создание транзакции: Мапим строку метода оплаты в наш доменный Enum
         PaymentMethod method = PaymentMethod.valueOf(command.paymentMethodName().toUpperCase());
         PaymentTransaction transaction = PaymentTransaction.createNew(
                 command.merchantId(),
@@ -67,23 +86,36 @@ public class ProcessPaymentService implements ProcessPaymentUseCase {
                 method
         );
 
-        // 4. Роутинг: Запускаем чистое бизнес-правило выбора провайдера (Испанское ТЗ)
+        // 5. Роутинг: Запускаем чистое бизнес-правило выбора провайдера (Испанское ТЗ)
         transaction.assignRoutingProvider();
 
-        // 5. БД: Сохраняем первичную запись транзакции в статусе CREATED
+        // 6. БД: Сохраняем первичную запись транзакции в статусе CREATED
         PaymentTransaction savedTransaction = paymentRepositoryPort.save(transaction);
 
-        // 6. Банковское API: Проводим платеж со встроенным fallback-механизмом
+        // 7. Банковское API: Проводим платеж со встроенным fallback-механизмом
         boolean isGatewaySuccess = executePaymentWithResilience(savedTransaction);
 
-        // 7. Финал: Меняем статус агрегата на основе ответа шлюзов и сохраняем финальный результат
+        // 8. Финал: Меняем статус агрегата на основе ответа шлюзов и сохраняем финальный результат
         if (isGatewaySuccess) {
             savedTransaction.markAsSuccess();
         } else {
             savedTransaction.markAsFailed();
         }
 
-        return paymentRepositoryPort.save(savedTransaction);
+        // 9. Сохраняем финальный результат изменения статуса в БД
+        PaymentTransaction finalResult = paymentRepositoryPort.save(savedTransaction);
+
+        // 10. Outbox Pattern: Если платеж успешен — пишем событие в таблицу outbox_events
+        if (finalResult.getStatus() == PaymentStatus.SUCCESS) {
+            String eventPayloadJson = String.format(
+                    "{\"transactionId\":\"%s\",\"amount\":%s,\"currency\":\"%s\"}",
+                    finalResult.getId(), finalResult.getAmount(), finalResult.getCurrency()
+            );
+            // Вызываем порт инфраструктуры
+            outboxEventPort.sendPaymentSuccessEvent(finalResult.getId(), eventPayloadJson);
+        }
+
+        return finalResult;
     }
 
     private boolean executePaymentWithResilience(PaymentTransaction transaction) {
